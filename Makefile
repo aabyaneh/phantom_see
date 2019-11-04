@@ -2,7 +2,7 @@
 CFLAGS := -w -g -O3 -m64 -D'main(a,b)=main(int argc, char** argv)'
 
 # Compile symbolic execution engine
-phantom: phantom.c sase.c mit.c
+phantom: phantom.cpp sase.cpp mit.cpp
 	$(CXX) $(CFLAGS) $^ -o $@ -lboolector -lbtor2parser -llgl
 
 # Compile selfie.c into selfie executable
