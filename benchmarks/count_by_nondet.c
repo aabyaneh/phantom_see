@@ -19,7 +19,7 @@ void VERIFIER_assert(uint64_t cond) {
   return;
 }
 
-uint64_t LARGE_INT = 10000;
+uint64_t LARGE_INT = 2000;
 
 uint64_t main() {
   uint64_t i;

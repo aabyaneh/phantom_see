@@ -1,3 +1,8 @@
+/*
+  This file is a C* translation of the original implementation
+  done by Alireza Abyaneh.
+*/
+
 uint64_t CHAR_EOF          =  -1;
 uint64_t CHAR_TAB          =   9;
 uint64_t CHAR_LF           =  10;

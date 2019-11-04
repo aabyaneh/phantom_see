@@ -1,3 +1,8 @@
+/*
+  This file is a C* translation of the original implementation
+  done by Alireza Abyaneh.
+*/
+
 uint64_t* malloc(uint64_t size);
 
 uint64_t* power_of_two_table;
@@ -7,12 +12,12 @@ uint64_t signed_less_than(uint64_t a, uint64_t b) {
   return a + INT64_MIN_T < b + INT64_MIN_T;
 }
 
-void swap(uint64_t* a, uint64_t* b) {
-  uint64_t t;
+void swap(uint64_t* op1, uint64_t* op2) {
+  uint64_t temp;
 
-  t  = *a;
-  *a = *b;
-  *b = t;
+  temp = *op1;
+  *op1 = *op2;
+  *op2 = temp;
 }
 
 uint64_t partition(uint64_t* arr, uint64_t low, uint64_t high) {
@@ -37,29 +42,27 @@ uint64_t partition(uint64_t* arr, uint64_t low, uint64_t high) {
   return i + 1;
 }
 
-void quickSort(uint64_t* arr, uint64_t low, uint64_t high) {
+void quick_sort(uint64_t* arr, uint64_t low, uint64_t high) {
   uint64_t pi;
 
   if (signed_less_than(low, high)) {
     pi = partition(arr, low, high);
 
-    quickSort(arr, low, pi - 1);
-    quickSort(arr, pi + 1, high);
+    quick_sort(arr, low, pi - 1);
+    quick_sort(arr, pi + 1, high);
   }
 }
 
 void init() {
   uint64_t i;
 
-  // powers of two table with CPUBITWIDTH entries for 2^0 to 2^(CPUBITWIDTH - 1)
   power_of_two_table = malloc(64 * 8);
 
-  *power_of_two_table = 1; // 2^0 == 1
+  *power_of_two_table = 1;
 
   i = 1;
 
   while (i < 64) {
-    // compute powers of two incrementally using this recurrence relation
     *(power_of_two_table + i) = *(power_of_two_table + (i - 1)) * 2;
 
     i = i + 1;
@@ -67,7 +70,6 @@ void init() {
 }
 
 uint64_t two_to_the_power_of(uint64_t p) {
-  // assert: 0 <= p < CPUBITWIDTH
   return *(power_of_two_table + p);
 }
 
@@ -79,7 +81,7 @@ uint64_t main(uint64_t argc, uint64_t* argv) {
   init();
   INT64_MIN_T = two_to_the_power_of(63);
 
-  cnt = 300;
+  cnt = 250;
   arr = malloc(cnt * 8);
 
   v1 = 0;
@@ -91,7 +93,7 @@ uint64_t main(uint64_t argc, uint64_t* argv) {
 
   *(arr + cnt/2) = input(0, 2*cnt-1, 1);
 
-  quickSort(arr, 0, cnt - 1);
+  quick_sort(arr, 0, cnt - 1);
 
   return 0;
 }

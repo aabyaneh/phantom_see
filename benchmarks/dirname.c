@@ -1,3 +1,8 @@
+/*
+  This file is a C* translation of the original implementation
+  done by Alireza Abyaneh.
+*/
+
 uint64_t* dot;
 
 uint64_t* strchr(uint64_t* s, uint64_t c) {

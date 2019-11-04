@@ -7,7 +7,7 @@
   unreach-call: true
 */
 
-uint64_t LARGE_INT = 10000;
+uint64_t LARGE_INT = 2000;
 
 void VERIFIER_error() {
   uint64_t x;

@@ -24,7 +24,7 @@ uint64_t main() {
   uint64_t y;
 
   x = 2;
-  y = input(0, 10000, 1); // input(0, -1, 1);
+  y = input(0, 4000, 1); // input(0, -1, 1);
 
   if (y <= 0) return 0;
 

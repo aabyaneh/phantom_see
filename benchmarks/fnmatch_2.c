@@ -184,7 +184,7 @@ uint64_t main() {
   *(pattern_str + 18) = 'z';
   *(pattern_str + 19) = 0;
 
-  cnt = 15;
+  cnt = 14;
   str = malloc(cnt * 8);
   i = 0;
   while (i < cnt-1) {

@@ -1,14 +1,19 @@
+/*
+  This file is a C* translation of the original implementation
+  done by Alireza Abyaneh.
+*/
+
 uint64_t* malloc(uint64_t size);
 
-void swap(uint64_t* xp, uint64_t* yp) {
+void swap(uint64_t* op1, uint64_t* op2) {
   uint64_t temp;
 
-  temp = *xp;
-  *xp = *yp;
-  *yp = temp;
+  temp = *op1;
+  *op1 = *op2;
+  *op2 = temp;
 }
 
-void selectionSort(uint64_t* arr, uint64_t n) {
+void selection_sort(uint64_t* arr, uint64_t n) {
   uint64_t i;
   uint64_t j;
   uint64_t min_idx;
@@ -23,7 +28,8 @@ void selectionSort(uint64_t* arr, uint64_t n) {
       j = j + 1;
     }
 
-    swap(arr + min_idx, arr + i);
+    if (min_idx != i)
+      swap(arr + min_idx, arr + i);
 
     i = i + 1;
   }
@@ -34,7 +40,7 @@ uint64_t main(uint64_t argc, uint64_t* argv) {
   uint64_t cnt;
   uint64_t* arr;
 
-  cnt = 300;
+  cnt = 250;
   arr = malloc(cnt * 8);
 
   v1 = 0;
@@ -46,7 +52,7 @@ uint64_t main(uint64_t argc, uint64_t* argv) {
 
   *(arr + cnt/2) = input(0, 2*cnt-1, 1);
 
-  selectionSort(arr, cnt);
+  selection_sort(arr, cnt);
 
   return 0;
 }

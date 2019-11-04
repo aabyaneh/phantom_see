@@ -1,3 +1,8 @@
+/*
+  This file is a C* translation of the original implementation
+  done by Alireza Abyaneh.
+*/
+
 uint64_t compar(uint64_t* op1, uint64_t* op2) {
   return (*op1 == *op2);
 }

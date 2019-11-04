@@ -50,7 +50,7 @@ uint64_t main() {
   uint64_t input;
   uint64_t result;
 
-  input  = input(0, 10000, 1); // input(0, -1, 1);
+  input  = input(0, 2500, 1); // input(0, -1, 1);
   result = id(input);
 
   if (result == 10) {

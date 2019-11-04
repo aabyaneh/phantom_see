@@ -19,7 +19,7 @@ void VERIFIER_assert(uint64_t cond) {
   return;
 }
 
-uint64_t LARGE_INT = 1000000;
+uint64_t LARGE_INT = 100;
 
 uint64_t main() {
   uint64_t n;
@@ -34,12 +34,12 @@ uint64_t main() {
 
   if (10 > n)
     return 0;
-  else if (n > 10000)
+  else if (n > LARGE_INT)
     return 0;
 
   if (10 > m)
     return 0;
-  else if (m > 10000)
+  else if (m > LARGE_INT)
     return 0;
 
   i = 0;

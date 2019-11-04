@@ -48,7 +48,7 @@ uint64_t main() {
   uint64_t result;
   uint64_t mod;
 
-  n = input(0, 10000, 1); // input(0, -1, 1);
+  n = input(0, 2000, 1); // input(0, -1, 1);
 
   if (n < 0) {
     return 0;
