@@ -1,54 +1,21 @@
-#include "msiiad.h"
+#include "mit.h"
+
+// -----------------------------------------------------------------
+// ------- Symbolic Execution using modular interval theory  -------
+// -----------------------------------------------------------------
 
 typedef unsigned __int128 uint128_t;
 
 // ------------------------ GLOBAL VARIABLES -----------------------
 
-uint64_t MSIIAD               = 9;
+uint64_t MIT                  = 9;
 uint64_t MAX_TRACE_LENGTH     = 10000000;
 uint64_t MAX_SD_TO_NUM        = 2001;
 uint64_t MAX_NUM_OF_INTERVALS = 2001;
 uint64_t MAX_NUM_OF_OP_VADDRS = 100;
-uint64_t TWO_TO_THE_POWER_OF_32;
 
 uint128_t UINT64_MAX_VALUE    = 18446744073709551615U;
 uint128_t TWO_TO_THE_POWER_OF_64;
-
-// ---------------------------------------------
-// --------------- the trace
-// ---------------------------------------------
-
-uint64_t  tc              = 0;             // trace counter
-uint64_t* pcs             = (uint64_t*) 0; // trace of program counter values
-uint64_t* tcs             = (uint64_t*) 0; // trace of trace counters to previous values
-uint64_t* vaddrs          = (uint64_t*) 0; // trace of virtual addresses
-
-// ---------------------------------------------
-// --------------- propagation trace
-// ---------------------------------------------
-
-uint64_t* mr_sds          = (uint64_t*) 0; // the tc of most recent store to a memory address
-
-// propagation from right to left
-std::vector<std::vector<uint64_t> > forward_propagated_to_tcs(MAX_TRACE_LENGTH);
-
-// propagation from left to right (chain)
-std::vector<std::vector<uint64_t> > ld_from_tcs(MAX_TRACE_LENGTH);
-
-// temporary data-structure to pass values targeting propagations
-std::vector<uint64_t> propagated_minterval_lo(MAX_NUM_OF_INTERVALS);
-std::vector<uint64_t> propagated_minterval_up(MAX_NUM_OF_INTERVALS);
-uint32_t propagated_minterval_cnt = 0;
-uint64_t propagated_minterval_step;
-
-// ---------------------------------------------
-// --------------- read trace
-// ---------------------------------------------
-
-uint64_t  rc          = 0;              // read counter
-uint64_t* read_values = (uint64_t*) 0;
-uint64_t* read_los    = (uint64_t*) 0;
-uint64_t* read_ups    = (uint64_t*) 0;
 
 // ---------------------------------------------
 // --------------- memory trace
@@ -58,6 +25,10 @@ uint32_t  VALUE_T         = 0;
 uint32_t  POINTER_T       = 1;
 uint32_t  INPUT_T         = 2;
 
+uint64_t  tc              = 0;             // trace counter
+uint64_t* pcs             = (uint64_t*) 0; // trace of program counter values
+uint64_t* tcs             = (uint64_t*) 0; // trace of trace counters to previous values
+uint64_t* vaddrs          = (uint64_t*) 0; // trace of virtual addresses
 uint64_t* values          = (uint64_t*) 0; // trace of values
 uint64_t* data_types      = (uint64_t*) 0; // memory range (or) value integer interval
 uint64_t* steps           = (uint64_t*) 0; // incrementing step of the value intervals
@@ -129,6 +100,33 @@ uint32_t  DEQ  = 5;
 bool is_only_one_branch_reachable = false;
 
 // ---------------------------------------------
+// --------------- propagation trace
+// ---------------------------------------------
+
+uint64_t* mr_sds          = (uint64_t*) 0; // the tc of most recent store to a memory address
+
+// propagation from right to left
+std::vector<std::vector<uint64_t> > forward_propagated_to_tcs(MAX_TRACE_LENGTH);
+
+// propagation from left to right (chain)
+std::vector<std::vector<uint64_t> > ld_from_tcs(MAX_TRACE_LENGTH);
+
+// temporary data-structure to pass values targeting propagations
+std::vector<uint64_t> propagated_minterval_lo(MAX_NUM_OF_INTERVALS);
+std::vector<uint64_t> propagated_minterval_up(MAX_NUM_OF_INTERVALS);
+uint32_t propagated_minterval_cnt = 0;
+uint64_t propagated_minterval_step;
+
+// ---------------------------------------------
+// --------------- read trace
+// ---------------------------------------------
+
+uint64_t  rc          = 0;              // read counter
+uint64_t* read_values = (uint64_t*) 0;
+uint64_t* read_los    = (uint64_t*) 0;
+uint64_t* read_ups    = (uint64_t*) 0;
+
+// ---------------------------------------------
 // --------------- symbolic inputs management
 // ---------------------------------------------
 
@@ -145,6 +143,15 @@ std::ofstream output_results;
 // ---------------------------------------------
 // --------------- pse (probabilistic symbolic execution)
 // ---------------------------------------------
+
+// -------- engine parameters
+// PSE = true means probabilistic symbolic execution is enabled
+bool PSE = false;
+// PSE_WRITE = true means write the queries in output
+bool PSE_WRITE = false;
+// PER_PATH = false means generate pse variables targeting disjunction of all paths
+// PER_PATH = true  means generate pse variables targeting one under analysis path
+bool PER_PATH = false;
 
 struct node {
   uint8_t  type;
@@ -180,32 +187,6 @@ uint64_t pse_operation(uint8_t typ, uint64_t left_node, uint64_t right_node) {
   pse_ast_nodes[tree_tc].right_node = right_node;
 
   return tree_tc;
-}
-
-// -------- engine parameters
-// PSE = true means probabilistic symbolic execution is enabled
-bool PSE = true;
-// PSE_WRITE = true means write the queries in output
-bool PSE_WRITE = true;
-// PER_PATH = false means generate pse variables targeting disjunction of all paths
-// PER_PATH = true  means generate pse variables targeting one under analysis path
-bool PER_PATH = false;
-// -------- modes management
-// mode == 1 means complete theory of intervals
-// mode != 1 means approximated theory of intervals + pse
-uint8_t  MODE = 1;
-uint64_t tc_before_changing_mode = 0;
-
-void upgrade_mode(std::string message) {
-  if (MODE == 1) {
-    printf("OUTPUT: %s at %x\n", pc - entry_point);
-    tc_before_changing_mode = tc;
-    MODE = 2;
-  }
-}
-
-void downgrade_mode() {
-  MODE = 1;
 }
 
 // ------------------------- INITIALIZATION ------------------------
@@ -282,7 +263,6 @@ void init_symbolic_engine() {
   mintervals_los[0].push_back(0);
   mintervals_ups[0].push_back(0);
 
-  TWO_TO_THE_POWER_OF_32 = two_to_the_power_of(32);
   TWO_TO_THE_POWER_OF_64 = UINT64_MAX_VALUE + 1U;
 
   if (IS_TEST_MODE) {
@@ -528,8 +508,6 @@ void constrain_add() {
     // interval semantics of add
     if (reg_symb_type[rs1] == SYMBOLIC) {
       if (reg_symb_type[rs2] == SYMBOLIC) {
-        // we cannot keep track of more than one constraint for add but
-        // need to warn about their earlier presence if used in comparisons
         set_correction(rd, SYMBOLIC, 0, 0, 0, 10);
         uint32_t rd_addr_idx = reg_vaddrs_cnts[rs1] + reg_vaddrs_cnts[rs2];
         set_vaddrs(rd, reg_vaddrs[rs1], 0, reg_vaddrs_cnts[rs1]);
@@ -684,8 +662,6 @@ void constrain_sub() {
     // interval semantics of sub
     if (reg_symb_type[rs1] == SYMBOLIC) {
       if (reg_symb_type[rs2] == SYMBOLIC) {
-        // we cannot keep track of more than one constraint for sub but
-        // need to warn about their earlier presence if used in comparisons
         set_correction(rd, SYMBOLIC, 0, 0, 0, 10);
         uint32_t rd_addr_idx = reg_vaddrs_cnts[rs1] + reg_vaddrs_cnts[rs2];
         set_vaddrs(rd, reg_vaddrs[rs1], 0, reg_vaddrs_cnts[rs1]);
@@ -1313,7 +1289,7 @@ void print_symbolic_memory(uint64_t svc) {
 }
 
 bool is_symbolic_value(uint64_t type, uint32_t mints_num, uint64_t lo, uint64_t up) {
-  if (type)
+  if (type == POINTER_T)
     // memory range
     return 0;
   else if (mints_num > 1)
@@ -1649,9 +1625,6 @@ void apply_correction(std::vector<uint64_t>& lo, std::vector<uint64_t>& up, uint
   std::vector<uint64_t> lo_p;
   std::vector<uint64_t> up_p;
   std::vector<uint32_t> idxs;
-  // uint64_t lo_p[mints_num];
-  // uint64_t up_p[mints_num];
-  // uint32_t idxs[mints_num];
 
   uint32_t j;
   // bool is_found;
@@ -1825,8 +1798,6 @@ void propagate_backwards_rhs(std::vector<uint64_t>& lo, std::vector<uint64_t>& u
   uint64_t tmp;
   std::vector<uint64_t> lo_p;
   std::vector<uint64_t> up_p;
-  // uint64_t lo_p[mints_num];
-  // uint64_t up_p[mints_num];
 
   for (uint32_t j = 0; j < mints_num; j++) {
     lo_p.push_back(lo[j]);
@@ -1910,19 +1881,11 @@ void propagate_backwards(uint64_t mrvc_y, std::vector<uint64_t>& lo_before_op, s
 void constrain_memory(uint64_t reg, std::vector<uint64_t>& lo, std::vector<uint64_t>& up, uint32_t mints_num, uint64_t trb, bool only_reachable_branch) {
   uint64_t mrvc;
 
-  if (reg_symb_type[reg] == SYMBOLIC && assert_zone == false) {
-    if (only_reachable_branch == true) {
-      // for (uint32_t i = 0; i < reg_vaddrs_cnts[reg]; i++) {
-      //   mrvc = load_symbolic_memory(pt, reg_vaddrs[reg][i]);
-      //   lo = mintervals_los[mrvc];
-      //   up = mintervals_ups[mrvc];
-      //   store_constrained_memory(reg_vaddrs[reg][i], lo, up, mintervals_los[mrvc].size(), steps[mrvc], ld_from_tcs[mrvc], ld_from_tcs[mrvc].size(), hasmns[mrvc], addsub_corrs[mrvc], muldivrem_corrs[mrvc], corr_validitys[mrvc], mrvc, is_inputs[mrvc]);
-      // }
-    } else {
+  if (reg_symb_type[reg] == SYMBOLIC) {
+    if (only_reachable_branch == false) {
       mrvc = (reg == rs1) ? tc_before_branch_evaluation_rs1 : tc_before_branch_evaluation_rs2;
       apply_correction(lo, up, mints_num, reg_hasmn[reg], reg_addsub_corr[reg], reg_muldivrem_corr[reg], reg_corr_validity[reg], reg_mintervals_los[reg], reg_mintervals_ups[reg], reg_steps[reg], mrvc, true);
     }
-
   }
 }
 
@@ -1942,7 +1905,7 @@ void set_correction(uint64_t reg, uint32_t hasco, uint32_t hasmn, uint64_t addsu
 }
 
 void take_branch(uint64_t b, uint64_t how_many_more) {
-  if (how_many_more > 0 && assert_zone == false) {
+  if (how_many_more > 0) {
     // record that we need to set rd to true
     value_v[0] = b;
     store_register_memory(rd, value_v);
@@ -1953,9 +1916,9 @@ void take_branch(uint64_t b, uint64_t how_many_more) {
     value_v[0] = registers[REG_SP];
     store_register_memory(REG_SP, value_v);
   } else {
-    reg_data_type[rd] = VALUE_T;
-    registers[rd]     = b;
-    reg_steps[rd]     = 1;
+    reg_data_type[rd]         = VALUE_T;
+    registers[rd]             = b;
+    reg_steps[rd]             = 1;
     reg_mintervals_los[rd][0] = b;
     reg_mintervals_ups[rd][0] = b;
     reg_mintervals_cnts[rd]   = 1;
@@ -2193,20 +2156,8 @@ void create_mconstraints(std::vector<uint64_t>& lo1_p, std::vector<uint64_t>& up
 
   if (cannot_handle) {
     // detected non-singleton interval intersection
-    upgrade_mode("detected non-singleton interval intersection");
-
-    if (check_conditional_type_lte_or_gte() == LGTE) {
-      false_branches.push_back(pse_operation(ILT , reg_pse_ast[rs1], reg_pse_ast[rs2]));
-      path_condition.push_back(pse_operation(IGTE, reg_pse_ast[rs1], reg_pse_ast[rs2]));
-      take_branch(1, 1);
-      take_branch(0, 0);
-    } else {
-      false_branches.push_back(pse_operation(IGTE, reg_pse_ast[rs1], reg_pse_ast[rs2]));
-      path_condition.push_back(pse_operation(ILT , reg_pse_ast[rs1], reg_pse_ast[rs2]));
-      take_branch(0, 1);
-      take_branch(1, 0);
-    }
-    return;
+    printf("detected non-singleton interval intersection at %x \n", pc - entry_point);
+    exit((int) EXITCODE_SYMBOLICEXECUTIONERROR);
   }
 
   if (true_branch_rs1_minterval_cnt > 0 && true_branch_rs2_minterval_cnt > 0)
@@ -2277,20 +2228,8 @@ void create_mconstraints_lptr(uint64_t lo1, uint64_t up1, std::vector<uint64_t>&
 
   if (cannot_handle) {
     // detected non-singleton interval intersection
-    upgrade_mode("detected non-singleton interval intersection");
-
-    if (check_conditional_type_lte_or_gte() == LGTE) {
-      false_branches.push_back(pse_operation(ILT , reg_pse_ast[rs1], reg_pse_ast[rs2]));
-      path_condition.push_back(pse_operation(IGTE, reg_pse_ast[rs1], reg_pse_ast[rs2]));
-      take_branch(1, 1);
-      take_branch(0, 0);
-    } else {
-      false_branches.push_back(pse_operation(IGTE, reg_pse_ast[rs1], reg_pse_ast[rs2]));
-      path_condition.push_back(pse_operation(ILT , reg_pse_ast[rs1], reg_pse_ast[rs2]));
-      take_branch(0, 1);
-      take_branch(1, 0);
-    }
-    return;
+    printf("detected non-singleton interval intersection at %x \n", pc - entry_point);
+    exit((int) EXITCODE_SYMBOLICEXECUTIONERROR);
   }
 
   if (true_branch_rs1_minterval_cnt > 0 && true_branch_rs2_minterval_cnt > 0)
@@ -2360,20 +2299,8 @@ void create_mconstraints_rptr(std::vector<uint64_t>& lo1_p, std::vector<uint64_t
 
   if (cannot_handle) {
     // detected non-singleton interval intersection
-    upgrade_mode("detected non-singleton interval intersection");
-
-    if (check_conditional_type_lte_or_gte() == LGTE) {
-      false_branches.push_back(pse_operation(ILT , reg_pse_ast[rs1], reg_pse_ast[rs2]));
-      path_condition.push_back(pse_operation(IGTE, reg_pse_ast[rs1], reg_pse_ast[rs2]));
-      take_branch(1, 1);
-      take_branch(0, 0);
-    } else {
-      false_branches.push_back(pse_operation(IGTE, reg_pse_ast[rs1], reg_pse_ast[rs2]));
-      path_condition.push_back(pse_operation(ILT , reg_pse_ast[rs1], reg_pse_ast[rs2]));
-      take_branch(0, 1);
-      take_branch(1, 0);
-    }
-    return;
+    printf("detected non-singleton interval intersection at %x \n", pc - entry_point);
+    exit((int) EXITCODE_SYMBOLICEXECUTIONERROR);
   }
 
   if (true_branch_rs1_minterval_cnt > 0 && true_branch_rs2_minterval_cnt > 0)
@@ -2629,20 +2556,8 @@ void create_xor_mconstraints(std::vector<uint64_t>& lo1_p, std::vector<uint64_t>
 
     if (cannot_handle) {
       // detected non-singleton interval intersection
-      upgrade_mode("detected non-singleton interval intersection");
-
-      if (check_conditional_type_equality_or_disequality() == EQ) {
-        false_branches.push_back(pse_operation(INEQ, reg_pse_ast[rs1], reg_pse_ast[rs2]));
-        path_condition.push_back(pse_operation(IEQ , reg_pse_ast[rs1], reg_pse_ast[rs2]));
-        take_branch(1, 1);
-        take_branch(0, 0);
-      } else {
-        false_branches.push_back(pse_operation(IEQ , reg_pse_ast[rs1], reg_pse_ast[rs2]));
-        path_condition.push_back(pse_operation(INEQ, reg_pse_ast[rs1], reg_pse_ast[rs2]));
-        take_branch(0, 1);
-        take_branch(1, 0);
-      }
-      return;
+      printf("detected non-singleton interval intersection at %x \n", pc - entry_point);
+      exit((int) EXITCODE_SYMBOLICEXECUTIONERROR);
     }
 
   } else {
@@ -2733,20 +2648,8 @@ void create_xor_mconstraints_lptr(uint64_t lo1, uint64_t up1, std::vector<uint64
 
     if (cannot_handle) {
       // detected non-singleton interval intersection
-      upgrade_mode("detected non-singleton interval intersection");
-
-      if (check_conditional_type_equality_or_disequality() == EQ) {
-        false_branches.push_back(pse_operation(INEQ, reg_pse_ast[rs1], reg_pse_ast[rs2]));
-        path_condition.push_back(pse_operation(IEQ , reg_pse_ast[rs1], reg_pse_ast[rs2]));
-        take_branch(1, 1);
-        take_branch(0, 0);
-      } else {
-        false_branches.push_back(pse_operation(IEQ , reg_pse_ast[rs1], reg_pse_ast[rs2]));
-        path_condition.push_back(pse_operation(INEQ, reg_pse_ast[rs1], reg_pse_ast[rs2]));
-        take_branch(0, 1);
-        take_branch(1, 0);
-      }
-      return;
+      printf("detected non-singleton interval intersection at %x \n", pc - entry_point);
+      exit((int) EXITCODE_SYMBOLICEXECUTIONERROR);
     }
 
   } else {
@@ -2837,20 +2740,8 @@ void create_xor_mconstraints_rptr(std::vector<uint64_t>& lo1_p, std::vector<uint
 
     if (cannot_handle) {
       // detected non-singleton interval intersection
-      upgrade_mode("detected non-singleton interval intersection");
-
-      if (check_conditional_type_equality_or_disequality() == EQ) {
-        false_branches.push_back(pse_operation(INEQ, reg_pse_ast[rs1], reg_pse_ast[rs2]));
-        path_condition.push_back(pse_operation(IEQ , reg_pse_ast[rs1], reg_pse_ast[rs2]));
-        take_branch(1, 1);
-        take_branch(0, 0);
-      } else {
-        false_branches.push_back(pse_operation(IEQ , reg_pse_ast[rs1], reg_pse_ast[rs2]));
-        path_condition.push_back(pse_operation(INEQ, reg_pse_ast[rs1], reg_pse_ast[rs2]));
-        take_branch(0, 1);
-        take_branch(1, 0);
-      }
-      return;
+      printf("detected non-singleton interval intersection at %x \n", pc - entry_point);
+      exit((int) EXITCODE_SYMBOLICEXECUTIONERROR);
     }
 
   } else {
@@ -2922,7 +2813,7 @@ void backtrack_sltu() {
       reg_mintervals_ups[vaddr][0] = mintervals_ups[tc][0];
       reg_mintervals_cnts[vaddr]   = 1;
       reg_steps[vaddr]             = 1;
-      reg_vaddrs_cnts[rd]          = 0;
+      reg_vaddrs_cnts[vaddr]       = 0;
 
       set_correction(vaddr, 0, 0, 0, 0, 0);
 
@@ -3378,7 +3269,9 @@ uint64_t check_conditional_type_lte_or_gte() {
   return LT;
 }
 
-// ------------------------------ path condition -------------------------------
+// -----------------------------------------------------------------------------
+// pse query generation
+// -----------------------------------------------------------------------------
 
 void decode_operation(uint64_t node_tc) {
   switch (pse_ast_nodes[node_tc].type) {
@@ -3451,7 +3344,6 @@ void path_condition_traverse(uint64_t node_tc) {
 void generate_path_condition() {
   path_condition_string.clear();
   for (size_t i = 0; i < path_condition.size(); i++) {
-    // printf("%d\n", i);
     if (traversed_path_condition_elements.size() <= i) {
       // not yet traversed
       size_t end = path_condition_string.size();

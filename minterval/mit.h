@@ -7,9 +7,9 @@
 #include <fstream>
 #include <iomanip>
 #include <algorithm>
-#include<iterator>
+#include <iterator>
 
-// ------ shared variables and procedures between source files -----
+// ------------ shared variables and procedures between source files -----------
 
 extern uint64_t rs1;
 extern uint64_t rs2;
@@ -48,8 +48,6 @@ extern uint64_t* stores_per_instruction;
 extern uint64_t* binary_name;
 
 extern uint64_t entry_point;
-extern bool     assert_zone;
-
 extern uint64_t ic_addi;
 extern uint64_t ic_sub;
 extern uint64_t ic_sltu;
@@ -83,48 +81,45 @@ void     set_pc(uint64_t* context, uint64_t pc);
 
 // ---------------------------- SYMBOLIC----------------------------
 
-extern uint64_t MSIIAD;
+extern uint64_t MIT;
 extern uint64_t MAX_TRACE_LENGTH;
+extern uint32_t VALUE_T;
+extern uint32_t POINTER_T;
+extern uint32_t CONCRETE;
+extern uint32_t SYMBOLIC;
+
+extern uint64_t mrcc;
 extern uint64_t debug_symbolic;
 extern uint64_t backtrack;
 extern bool     is_only_one_branch_reachable;
-extern bool     assert_zone;
-
-extern uint64_t  rc;
-extern uint64_t* read_values;
-extern uint64_t* read_los;
-extern uint64_t* read_ups;
-
-extern uint64_t* reg_steps;
-extern uint32_t* reg_data_type;
-extern uint32_t  VALUE_T;
-extern uint32_t  POINTER_T;
-extern uint32_t* reg_symb_type;
-extern uint32_t  CONCRETE;
-extern uint32_t  SYMBOLIC;
-extern bool*     reg_hasmn;
-extern uint64_t* reg_addsub_corr;
-extern uint64_t* reg_muldivrem_corr;
-extern uint64_t* reg_corr_validity;
-extern uint32_t* reg_mintervals_cnts;
-extern uint32_t* reg_vaddrs_cnts;
-extern std::vector<std::vector<uint64_t> > reg_vaddrs;
+extern std::vector<uint64_t>  zero_v;
 
 extern uint64_t* values;
 extern uint64_t* data_types;
 extern uint64_t* steps;
 extern std::vector<std::vector<uint64_t> > mintervals_los;
 extern std::vector<std::vector<uint64_t> > mintervals_ups;
-extern std::vector<std::vector<uint64_t> > reg_mintervals_los;
-extern std::vector<std::vector<uint64_t> > reg_mintervals_ups;
 extern std::vector<std::vector<uint64_t> > ld_from_tcs;
 
-extern std::vector<uint64_t>  zero_v;
+extern uint32_t* reg_data_type;
+extern uint32_t* reg_symb_type;
+extern uint32_t* reg_mintervals_cnts;
+extern uint64_t* reg_steps;
+extern bool*     reg_hasmn;
+extern uint64_t* reg_addsub_corr;
+extern uint64_t* reg_muldivrem_corr;
+extern uint64_t* reg_corr_validity;
+extern uint32_t* reg_vaddrs_cnts;
+extern std::vector<std::vector<uint64_t> > reg_vaddrs;
+extern std::vector<std::vector<uint64_t> > reg_mintervals_los;
+extern std::vector<std::vector<uint64_t> > reg_mintervals_ups;
 
-extern uint64_t mrcc;
+extern uint64_t  rc;
+extern uint64_t* read_values;
+extern uint64_t* read_los;
+extern uint64_t* read_ups;
 
 extern uint64_t symbolic_input_cnt;
-
 extern std::vector<uint64_t> input_table;
 
 extern bool IS_TEST_MODE;
@@ -166,7 +161,6 @@ bool is_symbolic_value(uint64_t type, uint32_t mints_num, uint64_t lo, uint64_t 
 uint64_t is_safe_address(uint64_t vaddr, uint64_t reg);
 uint64_t load_symbolic_memory(uint64_t* pt, uint64_t vaddr);
 uint64_t is_trace_space_available();
-
 void ealloc();
 void efree();
 uint64_t get_current_tc();
@@ -200,7 +194,3 @@ void handle_add_cnd_failure(std::vector<uint64_t>& mul_lo_rd, std::vector<uint64
 void handle_mul_cnd_failure(std::vector<uint64_t>& mul_lo_rd, std::vector<uint64_t>& mul_up_rd, uint64_t lo, uint64_t up, uint64_t step, uint64_t k);
 
 uint64_t compute_upper_bound(uint64_t lo, uint64_t step, uint64_t value);
-
-extern uint8_t  MODE;
-extern uint64_t tc_before_changing_mode;
-void downgrade_mode();

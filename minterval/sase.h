@@ -1,17 +1,9 @@
+#include <fcntl.h>
+#include <unistd.h>
 #include <iostream>
 #include "boolector/boolector.h"
 
-#include <fcntl.h>
-#include <unistd.h>
-
-#define RED   "\x1B[31m"
-#define GREEN "\033[32m"
-#define RESET "\x1B[0m"
-
-// -----------------------------------------------------------------
-// variables and procedures which will be defined in selfie.c
-// and are needed in sase engine
-// -----------------------------------------------------------------
+// ------------ shared variables and procedures between source files -----------
 
 extern uint64_t rs1;
 extern uint64_t rs2;
@@ -81,7 +73,7 @@ extern BoolectorNode*    one_bv;
 extern BoolectorNode*    eight_bv;
 extern BoolectorNode*    meight_bv;
 extern BoolectorNode*    twelve_bv;
-extern uint64_t          b;
+extern uint64_t          backtracking_cnt;
 extern uint64_t          SASE;
 extern uint8_t           CONCRETE_T;
 extern uint8_t           SYMBOLIC_T;

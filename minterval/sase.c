@@ -1,10 +1,5 @@
 /*
-  This project contains part of the Selfie Project source code
-  which is governed by a BSD license. For further information
-  and LICENSE conditions see the following website:
-  http://selfie.cs.uni-salzburg.at
-
-  Furthermore this project uses the api of boolector SMT solver
+  This project uses the api of boolector SMT solver
   further information: boolector.github.io
 */
 
@@ -25,7 +20,6 @@ BoolectorNode* eight_bv;
 BoolectorNode* meight_bv;
 BoolectorNode* twelve_bv;
 
-uint64_t       b             = 0; // counting total number of backtracking
 uint64_t       SASE          = 8; // Solver Aided Symbolic Execution
 uint8_t        CONCRETE_T    = 0; // concrete value type
 uint8_t        SYMBOLIC_T    = 1; // symbolic value type
@@ -341,7 +335,7 @@ void sase_divu() {
   boolector_assert(btor, boolector_eq(btor, sase_regs[rs2], zero_bv));
   if (boolector_sat(btor) == BOOLECTOR_SAT) {
     printf("OUTPUT: SE division by zero! at pc %llx \n", pc - entry_point);
-    printf("backtracking: %llu \n", b);
+    printf("backtracking: %llu \n", backtracking_cnt);
     boolector_print_model (btor, "smt2", stdout);
     exit(EXITCODE_SYMBOLICEXECUTIONERROR);
   }
@@ -361,7 +355,7 @@ void sase_remu() {
   boolector_assert(btor, boolector_eq(btor, sase_regs[rs2], zero_bv));
   if (boolector_sat (btor) == BOOLECTOR_SAT) {
     printf("OUTPUT: SE division by zero! at pc %llx \n", pc - entry_point);
-    printf("backtracking: %llu \n", b);
+    printf("backtracking: %llu \n", backtracking_cnt);
     boolector_print_model (btor, "smt2", stdout);
     exit(EXITCODE_SYMBOLICEXECUTIONERROR);
   }

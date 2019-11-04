@@ -1,10 +1,12 @@
-// This file contains part of the Selfie Project source code
-// which is governed by a BSD license. For further information
-// and LICENSE conditions see the following website:
-// http://selfie.cs.uni-salzburg.at
+/*
+  This file contains part of the Selfie Project source code
+  which is governed by a BSD license. For further information
+  and LICENSE conditions see the following website:
+  http://selfie.cs.uni-salzburg.at
+*/
 
 #include "sase.h"
-#include "msiiad.h"
+#include "mit.h"
 
 // -----------------------------------------------------------------
 // ----------------------- LIBRARY PROCEDURES ----------------------
@@ -663,9 +665,10 @@ uint64_t fuzz_up(uint64_t value);
 
 uint64_t fuzz = 0; // power-of-two fuzzing factor for read calls
 
-uint64_t debug_symbolic = 0;
-uint64_t symbolic  = 0;
-uint64_t backtrack = 0;
+uint64_t debug_symbolic   = 0;
+uint64_t symbolic         = 0;
+uint64_t backtrack        = 0;
+uint64_t backtracking_cnt = 0; // counting total number of backtracking
 
 // -----------------------------------------------------------------
 // -------------------------- INTERPRETER --------------------------
@@ -2439,7 +2442,7 @@ void implement_assert(uint64_t* context) {
   res = *(get_regs(context) + REG_A0);
 
   if (symbolic) {
-    if (symbolic == MSIIAD) {
+    if (symbolic == MIT) {
       if (res == 0 || is_only_one_branch_reachable == false) {
         printf("OUTPUT: assertion failed %llu, %d at %x", res, is_only_one_branch_reachable, pc - entry_point);
         exit((int) EXITCODE_SYMBOLICEXECUTIONERROR);
@@ -2459,7 +2462,7 @@ void implement_printsv(uint64_t* context) {
   uint64_t id;
   uint64_t addr;
 
-  if (symbolic && symbolic == MSIIAD) {
+  if (symbolic && symbolic == MIT) {
     id   = *(get_regs(context) + REG_A0);
     addr = (reg_vaddrs_cnts[REG_A1] > 0) ? vaddrs[ld_from_tcs[load_symbolic_memory(get_pt(context), reg_vaddrs[REG_A1][0])][0]] : 0;
 
@@ -2711,7 +2714,7 @@ uint64_t down_load_string(uint64_t* table, uint64_t vaddr, uint64_t* s) {
     if (is_valid_virtual_address(vaddr)) {
       if (is_virtual_address_mapped(table, vaddr)) {
         if (symbolic) {
-          if (symbolic == MSIIAD) {
+          if (symbolic == MIT) {
             mrvc = load_symbolic_memory(table, vaddr);
 
             *(s + i) = *(values + mrvc);
@@ -3627,7 +3630,7 @@ void decode_execute() {
   if (opcode == OP_IMM) {
     decode_i_format();
     if (funct3 == F3_ADDI) {
-      if (symbolic == MSIIAD) {
+      if (symbolic == MIT) {
         do_addi(); constrain_addi();
       } else if (symbolic == SASE) {
         do_addi(); sase_addi();
@@ -3640,7 +3643,7 @@ void decode_execute() {
   } else if (opcode == OP_LD) {
     decode_i_format();
     if (funct3 == F3_LD) {
-      if (symbolic == MSIIAD) {
+      if (symbolic == MIT) {
         constrain_ld();
       } else if (symbolic == SASE) {
         sase_ld();
@@ -3653,7 +3656,7 @@ void decode_execute() {
   } else if (opcode == OP_SD) {
     decode_s_format();
     if (funct3 == F3_SD) {
-      if (symbolic == MSIIAD) {
+      if (symbolic == MIT) {
         if (backtrack) backtrack_sd();
         else constrain_sd();
       } else if (symbolic == SASE) {
@@ -3668,7 +3671,7 @@ void decode_execute() {
     decode_r_format();
     if (funct3 == F3_ADD) { // = F3_SUB = F3_MUL
       if (funct7 == F7_ADD) {
-        if (symbolic == MSIIAD) {
+        if (symbolic == MIT) {
           do_add(); constrain_add();
         } else if (symbolic == SASE) {
           do_add(); sase_add();
@@ -3678,7 +3681,7 @@ void decode_execute() {
         return;
 
       } else if (funct7 == F7_SUB) {
-        if (symbolic == MSIIAD) {
+        if (symbolic == MIT) {
           do_sub(); constrain_sub();
         } else if (symbolic == SASE) {
           do_sub(); sase_sub();
@@ -3687,7 +3690,7 @@ void decode_execute() {
         }
         return;
       } else if (funct7 == F7_MUL) {
-        if (symbolic == MSIIAD) {
+        if (symbolic == MIT) {
           do_mul(); constrain_mul();
         } else if (symbolic == SASE) {
           do_mul(); sase_mul();
@@ -3699,7 +3702,7 @@ void decode_execute() {
 
     } else if (funct3 == F3_DIVU) {
       if (funct7 == F7_DIVU) {
-        if (symbolic == MSIIAD) {
+        if (symbolic == MIT) {
           do_divu(); constrain_divu();
         } else if (symbolic == SASE) {
           do_divu(); sase_divu();
@@ -3711,7 +3714,7 @@ void decode_execute() {
 
     } else if (funct3 == F3_REMU) {
       if (funct7 == F7_REMU) {
-        if (symbolic == MSIIAD) {
+        if (symbolic == MIT) {
           do_remu(); constrain_remu();
         } else if (symbolic == SASE) {
           do_remu(); sase_remu();
@@ -3723,7 +3726,7 @@ void decode_execute() {
 
     } else if (funct3 == F3_SLTU) {
       if (funct7 == F7_SLTU) {
-        if (symbolic == MSIIAD) {
+        if (symbolic == MIT) {
           if (backtrack) backtrack_sltu();
           else constrain_sltu();
         } else if (symbolic == SASE) {
@@ -3736,7 +3739,7 @@ void decode_execute() {
 
     } else if (funct3 == F3_XOR) {
       if (funct7 == F7_XOR) {
-        if (symbolic == MSIIAD) {
+        if (symbolic == MIT) {
           if (backtrack) backtrack_sltu();
           else constrain_xor();
         } else if (symbolic == SASE) {
@@ -3757,7 +3760,7 @@ void decode_execute() {
 
   } else if (opcode == OP_JAL) {
     decode_j_format();
-    if (symbolic == MSIIAD) {
+    if (symbolic == MIT) {
       do_jal(); constrain_jal_jalr();
     } else if (symbolic == SASE) {
       do_jal(); sase_jal_jalr();
@@ -3769,7 +3772,7 @@ void decode_execute() {
   } else if (opcode == OP_JALR) {
     decode_i_format();
     if (funct3 == F3_JALR) {
-      if (symbolic == MSIIAD) {
+      if (symbolic == MIT) {
         do_jalr(); constrain_jal_jalr();
       } else if (symbolic == SASE) {
         do_jalr(); sase_jal_jalr();
@@ -3781,7 +3784,7 @@ void decode_execute() {
 
   } else if (opcode == OP_LUI) {
     decode_u_format();
-    if (symbolic == MSIIAD) {
+    if (symbolic == MIT) {
       do_lui(); constrain_lui();
     } else if (symbolic == SASE) {
       do_lui(); sase_lui();
@@ -3793,7 +3796,7 @@ void decode_execute() {
   } else if (opcode == OP_SYSTEM) {
     decode_i_format();
     if (funct3 == F3_ECALL) {
-      if (symbolic == MSIIAD) {
+      if (symbolic == MIT) {
         if (backtrack) backtrack_ecall();
         else do_ecall();
       } else if (symbolic == SASE) {
@@ -4118,7 +4121,7 @@ void map_and_store(uint64_t* context, uint64_t vaddr, uint64_t data) {
     map_page(context, get_page_of_virtual_address(vaddr), (uint64_t) palloc());
 
   if (symbolic) {
-    if (symbolic == MSIIAD) {
+    if (symbolic == MIT) {
       if (is_trace_space_available()) {
         // always track initialized memory by using tc as most recent branch
         val_ptr_1[0] = data;
@@ -4412,30 +4415,30 @@ uint64_t engine(uint64_t* to_context) {
     if (handle_exception(current_context) == EXIT) {
 
       if (symbolic == SASE) {
+        // SASE engine
         if (sase_tc == 0 || pc == 0) {
-          printf("\nbacktracking: %llu\n", ++b);
+          printf("\nbacktracking: %llu\n\n", ++backtracking_cnt);
           return EXITCODE_NOERROR;
         } else {
-          b++;
+          backtracking_cnt++;
 
           sase_backtrack_sltu(0);
           set_pc(current_context, pc);
 
           if (pc == 0) {
-            printf("\nbacktracking: %llu\n", b);
+            printf("\nbacktracking: %llu\n\n", backtracking_cnt);
             return EXITCODE_NOERROR;
           }
         }
       } else {
-        // printf("%\nbacktracking %llu\n", b+1);
-
+        // MIT engine
         if (IS_TEST_MODE) {
           for (size_t j = 0; j < input_table.size(); j++) {
             for (uint32_t i = 0; i < mintervals_los[input_table[j]].size(); i++) {
               output_results << std::left << "I=" << j+1 << ";" << i+1 << ";" << mintervals_los[input_table[j]][i] << ";" << mintervals_ups[input_table[j]][i] << ";" << steps[input_table[j]] << std::endl;
             }
           }
-          output_results << "B=" << b+1 << "\n";
+          output_results << "B=" << backtracking_cnt + 1 << "\n";
         }
 
         if (PSE && PSE_WRITE) {
@@ -4445,22 +4448,18 @@ uint64_t engine(uint64_t* to_context) {
         }
 
         backtrack_trace(current_context);
-        if (MODE == 2 && tc_before_changing_mode <= get_current_tc()) downgrade_mode();
 
-        if (b == 0)
-          printf1((uint64_t*) "%s: backtracking \n", exe_name);
+        if (backtracking_cnt == 0)
+          printf1((uint64_t*) "\n%s: backtracking ", exe_name);
         else
-          unprint_integer(b);
+          unprint_integer(backtracking_cnt);
 
-        b = b + 1;
+        backtracking_cnt++;
 
-        print_integer(b);
+        print_integer(backtracking_cnt);
 
         if (pc == 0) {
           println();
-
-          printf1((uint64_t*) "%s: backtracking ", exe_name);
-          print_integer(b);
           println();
 
           if (PSE && PSE_WRITE) {
@@ -4504,11 +4503,11 @@ uint64_t selfie_run(uint64_t machine) {
 
     init_sase();
     init_memory(round_up(4 * sase_trace_size * SIZEOFUINT64, MEGABYTE) / MEGABYTE + 1);
-  } else if (machine == MSIIAD) {
-    symbolic = MSIIAD;
+  } else if (machine == MIT) {
+    symbolic = MIT;
 
     init_symbolic_engine();
-    init_memory(round_up(40 * MAX_TRACE_LENGTH * SIZEOFUINT64, MEGABYTE) / MEGABYTE + 1);
+    init_memory(round_up(4 * MAX_TRACE_LENGTH * SIZEOFUINT64, MEGABYTE) / MEGABYTE + 1);
   }
 
   fuzz = atoi(peek_argument());
@@ -4588,8 +4587,8 @@ void set_argument(uint64_t* argv) {
 
 void print_usage() {
   printf("usage: \n");
-  printf("intervals: executable -l binary -i 0 \n");
-  printf("SMT:       executable -l binary -k 0 \n");
+  printf("modular interval theory: executable -l binary -i 0 \n");
+  printf("SMT:                     executable -l binary -k 0 \n");
 }
 
 int main(uint64_t argc, uint64_t* argv) {
@@ -4616,7 +4615,7 @@ int main(uint64_t argc, uint64_t* argv) {
     if (string_compare(option, (uint64_t*) "-k")) {
       return selfie_run(SASE);
     } else if (string_compare(option, (uint64_t*) "-i")) {
-      return selfie_run(MSIIAD);
+      return selfie_run(MIT);
     } else {
       print_usage();
       return EXITCODE_BADARGUMENTS;
