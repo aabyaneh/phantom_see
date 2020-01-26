@@ -2444,13 +2444,13 @@ void implement_assert(uint64_t* context) {
   if (symbolic) {
     if (symbolic == MIT) {
       if (res == 0 || is_only_one_branch_reachable == false) {
-        printf("OUTPUT: assertion failed %llu, %d at %x", res, is_only_one_branch_reachable, pc - entry_point);
+        printf("OUTPUT: assertion failed %llu, %d at %llx", res, is_only_one_branch_reachable, pc - entry_point);
         exit((int) EXITCODE_SYMBOLICEXECUTIONERROR);
       }
 
       is_only_one_branch_reachable = false;
     } else {
-      printf("OUTPUT: assertion not supported %x", pc - entry_point);
+      printf("OUTPUT: assertion not supported %llx", pc - entry_point);
       exit((int) EXITCODE_SYMBOLICEXECUTIONERROR);
     }
   }
@@ -2472,7 +2472,7 @@ void implement_printsv(uint64_t* context) {
 
     for (size_t j = 0; j < input_table.size(); j++) {
       for (uint32_t i = 0; i < mintervals_los[input_table[j]].size(); i++) {
-        printf("---INPUT :=) id: %-3llu, mint: %-2u; => lo: %-5llu, up: %-5llu, step: %-5llu\n", j+1, i, mintervals_los[input_table[j]][i], mintervals_ups[input_table[j]][i], steps[input_table[j]]);
+        printf("---INPUT :=) id: %-3lu, mint: %-2u; => lo: %-5llu, up: %-5llu, step: %-5llu\n", j+1, i, mintervals_los[input_table[j]][i], mintervals_ups[input_table[j]][i], steps[input_table[j]]);
       }
     }
 

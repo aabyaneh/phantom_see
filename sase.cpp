@@ -210,7 +210,7 @@ uint64_t check_conditional_type_eq_or_deq() {
     pc = saved_pc;
     return 2; // DEQ;
   } else {
-    printf("OUTPUT: XOR instruction is incorrectly used at %x \n", pc - entry_point);
+    printf("OUTPUT: XOR instruction is incorrectly used at %llx \n", pc - entry_point);
     exit((int) EXITCODE_SYMBOLICEXECUTIONERROR);
   }
 
@@ -568,7 +568,7 @@ void sase_ld() {
         mrv = load_symbolic_memory(pt, vaddr);
 
         // if (mrv == 0)
-        //   printf("OUTPUT: uninitialize memory address %llu at pc %x\n", vaddr, pc - entry_point);
+        //   printf("OUTPUT: uninitialize memory address %llu at pc %llx\n", vaddr, pc - entry_point);
 
         sase_regs_typ[rd] = *(is_symbolics    + mrv);
         sase_regs[rd]     = *(symbolic_values + mrv);

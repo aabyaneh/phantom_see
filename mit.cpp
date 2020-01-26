@@ -178,7 +178,7 @@ uint64_t pse_operation(uint8_t typ, uint64_t left_node, uint64_t right_node) {
   tree_tc++;
 
   if (tree_tc > MAX_NODE_TRACE_LENGTH) {
-    printf("OUTPUT: MAX_NODE_TRACE_LENGTH reached %x\n", pc - entry_point);
+    printf("OUTPUT: MAX_NODE_TRACE_LENGTH reached %llx\n", pc - entry_point);
     exit((int) EXITCODE_SYMBOLICEXECUTIONERROR);
   }
 
@@ -463,7 +463,7 @@ bool constrain_add_pointer() {
   if (reg_data_type[rs1] == POINTER_T) {
     if (reg_data_type[rs2] == POINTER_T) {
       // adding two pointers is undefined
-      printf("OUTPUT: undefined addition of two pointers at %x\n", pc - entry_point);
+      printf("OUTPUT: undefined addition of two pointers at %llx\n", pc - entry_point);
       exit((int) EXITCODE_SYMBOLICEXECUTIONERROR);
     }
 
@@ -516,7 +516,7 @@ void constrain_add() {
         // interval semantics of add
         uint64_t gcd_steps = gcd(reg_steps[rs1], reg_steps[rs2]);
         if (check_incompleteness(gcd_steps) == true) {
-          printf("OUTPUT: steps in addition are not consistent at %x\n", pc - entry_point);
+          printf("OUTPUT: steps in addition are not consistent at %llx\n", pc - entry_point);
           exit((int) EXITCODE_SYMBOLICEXECUTIONERROR);
         }
 
@@ -539,7 +539,7 @@ void constrain_add() {
           merge_intervals(mul_lo_rd, mul_up_rd, mul_lo_rd.size(), gcd_steps);
 
         if (mul_lo_rd.size() > MAX_NUM_OF_INTERVALS) {
-          printf("OUTPUT: MAX_NUM_OF_INTERVALS in addition of two symbolics at %x\n", pc - entry_point);
+          printf("OUTPUT: MAX_NUM_OF_INTERVALS in addition of two symbolics at %llx\n", pc - entry_point);
           exit((int) EXITCODE_SYMBOLICEXECUTIONERROR);
         }
 
@@ -668,7 +668,7 @@ void constrain_sub() {
         set_vaddrs(rd, reg_vaddrs[rs2], reg_vaddrs_cnts[rs1], rd_addr_idx);
 
         if (reg_mintervals_cnts[rs1] > 1 || reg_mintervals_cnts[rs2] > 1) {
-          printf("OUTPUT: unsupported minterval 2 %x \n", pc - entry_point);
+          printf("OUTPUT: unsupported minterval 2 %llx \n", pc - entry_point);
           exit((int) EXITCODE_SYMBOLICEXECUTIONERROR);
         }
 
@@ -680,7 +680,7 @@ void constrain_sub() {
 
         bool cnd = add_sub_condition(reg_mintervals_los[rs1][0], reg_mintervals_ups[rs1][0], reg_mintervals_los[rs2][0], reg_mintervals_ups[rs2][0]);
         if (cnd == false) {
-          printf("OUTPUT: cannot reason about overflowed sub %x\n", pc - entry_point);
+          printf("OUTPUT: cannot reason about overflowed sub %llx\n", pc - entry_point);
           exit((int) EXITCODE_SYMBOLICEXECUTIONERROR);
         }
 
@@ -761,12 +761,12 @@ void constrain_mul() {
     if (reg_symb_type[rs1] == SYMBOLIC) {
       if (reg_symb_type[rs2] == SYMBOLIC) {
         // non-linear expressions are not supported
-        printf("OUTPUT: detected non-linear expression in mul at %x\n", pc - entry_point);
+        printf("OUTPUT: detected non-linear expression in mul at %llx\n", pc - entry_point);
         exit((int) EXITCODE_SYMBOLICEXECUTIONERROR);
 
       } else if (reg_hasmn[rs1]) {
         // correction does not work anymore
-        printf("OUTPUT: correction does not work anymore e.g. (1 - [.]) * 10 at %x\n", pc - entry_point);
+        printf("OUTPUT: correction does not work anymore e.g. (1 - [.]) * 10 at %llx\n", pc - entry_point);
         exit((int) EXITCODE_SYMBOLICEXECUTIONERROR);
 
       } else {
@@ -803,7 +803,7 @@ void constrain_mul() {
     } else if (reg_symb_type[rs2] == SYMBOLIC) {
       if (reg_hasmn[rs2]) {
         // correction does not work anymore
-        printf("OUTPUT: correction does not work anymore e.g. 10 * (1 - [.]) at %x\n", pc - entry_point);
+        printf("OUTPUT: correction does not work anymore e.g. 10 * (1 - [.]) at %llx\n", pc - entry_point);
         exit((int) EXITCODE_SYMBOLICEXECUTIONERROR);
 
       } else {
@@ -864,7 +864,7 @@ void constrain_divu() {
         reg_data_type[rd] = VALUE_T;
 
         if (reg_mintervals_cnts[rs1] > 1 || reg_mintervals_cnts[rs2] > 1) {
-          printf("OUTPUT: unsupported minterval 4 %x \n", pc - entry_point);
+          printf("OUTPUT: unsupported minterval 4 %llx \n", pc - entry_point);
           exit((int) EXITCODE_SYMBOLICEXECUTIONERROR);
         }
 
@@ -876,12 +876,12 @@ void constrain_divu() {
         if (reg_symb_type[rs1] == SYMBOLIC) {
           if (reg_symb_type[rs2] == SYMBOLIC) {
             // non-linear expressions are not supported
-            printf("OUTPUT: detected non-linear expression in divu at %x\n", pc - entry_point);
+            printf("OUTPUT: detected non-linear expression in divu at %llx\n", pc - entry_point);
             exit((int) EXITCODE_SYMBOLICEXECUTIONERROR);
 
           } else if (reg_hasmn[rs1]) {
             // correction does not work anymore
-            printf("OUTPUT: correction does not work anymore e.g. (1 - [.]) / 10 at %x\n", pc - entry_point);
+            printf("OUTPUT: correction does not work anymore e.g. (1 - [.]) / 10 at %llx\n", pc - entry_point);
             exit((int) EXITCODE_SYMBOLICEXECUTIONERROR);
 
           } else {
@@ -893,13 +893,13 @@ void constrain_divu() {
             // step computation
             if (reg_steps[rs1] < reg_mintervals_los[rs2][0]) {
               if (reg_mintervals_los[rs2][0] % reg_steps[rs1] != 0) {
-                printf("OUTPUT: steps in divison are not consistent at %x\n", pc - entry_point);
+                printf("OUTPUT: steps in divison are not consistent at %llx\n", pc - entry_point);
                 exit((int) EXITCODE_SYMBOLICEXECUTIONERROR);
               }
               reg_steps[rd] = 1;
             } else {
               if (reg_steps[rs1] % reg_mintervals_los[rs2][0] != 0) {
-                printf("OUTPUT: steps in divison are not consistent at %x\n", pc - entry_point);
+                printf("OUTPUT: steps in divison are not consistent at %llx\n", pc - entry_point);
                 exit((int) EXITCODE_SYMBOLICEXECUTIONERROR);
               }
               reg_steps[rd] = reg_steps[rs1] / reg_mintervals_los[rs2][0];
@@ -915,7 +915,7 @@ void constrain_divu() {
               // lo/k == up/k (or) up/k + step_rd
               if (div_lo != div_up)
                 if (div_lo > div_up + reg_steps[rd]) {
-                  printf("OUTPUT: wrapped divison rsults two intervals at %x\n", pc - entry_point);
+                  printf("OUTPUT: wrapped divison rsults two intervals at %llx\n", pc - entry_point);
                   exit((int) EXITCODE_SYMBOLICEXECUTIONERROR);
                 }
             } else {
@@ -931,7 +931,7 @@ void constrain_divu() {
           if (PSE) reg_pse_ast[rd] = pse_operation(DIVU, reg_pse_ast[rs1] , reg_pse_ast[rs2]);
 
         } else if (reg_symb_type[rs2] == SYMBOLIC) {
-          printf("OUTPUT: detected division of constant by interval at %x\n", pc - entry_point);
+          printf("OUTPUT: detected division of constant by interval at %llx\n", pc - entry_point);
           exit((int) EXITCODE_SYMBOLICEXECUTIONERROR);
 
           if (PSE) reg_pse_ast[rd] = pse_operation(DIVU, reg_pse_ast[rs1] , reg_pse_ast[rs2]);
@@ -966,7 +966,7 @@ void constrain_remu() {
 
   if (reg_symb_type[rs2] == SYMBOLIC) {
     // rs2 has constraint
-    printf("OUTPUT: constrained memory location in right operand of remu at %x\n", pc - entry_point);
+    printf("OUTPUT: constrained memory location in right operand of remu at %llx\n", pc - entry_point);
     exit((int) EXITCODE_SYMBOLICEXECUTIONERROR);
   }
 
@@ -974,7 +974,7 @@ void constrain_remu() {
     return;
 
   if (reg_mintervals_cnts[rs1] > 1 || reg_mintervals_cnts[rs2] > 1) {
-    printf("OUTPUT: unsupported minterval 5 %x\n", pc - entry_point);
+    printf("OUTPUT: unsupported minterval 5 %llx\n", pc - entry_point);
     exit((int) EXITCODE_SYMBOLICEXECUTIONERROR);
   }
 
@@ -993,7 +993,7 @@ void constrain_remu() {
         rem_up        = reg_mintervals_ups[rs1][0] % divisor;
         reg_steps[rd] = step;
       } else if (rem_typ == 1) {
-        printf("OUTPUT: modulo results two intervals at %x\n", pc - entry_point);
+        printf("OUTPUT: modulo results two intervals at %llx\n", pc - entry_point);
         exit((int) EXITCODE_SYMBOLICEXECUTIONERROR);
       } else if (rem_typ == 2) {
         uint64_t gcd_step_k = gcd(step, divisor);
@@ -1001,7 +1001,7 @@ void constrain_remu() {
         rem_up        = compute_upper_bound(rem_lo, gcd_step_k, divisor - 1);
         reg_steps[rd] = gcd_step_k;
       } else {
-        printf("OUTPUT: modulo results many intervals at %x\n", pc - entry_point);
+        printf("OUTPUT: modulo results many intervals at %llx\n", pc - entry_point);
         exit((int) EXITCODE_SYMBOLICEXECUTIONERROR);
       }
 
@@ -1014,7 +1014,7 @@ void constrain_remu() {
       uint64_t lcm        = (step * divisor) / gcd_step_k;
 
       if (reg_mintervals_ups[rs1][0] - reg_mintervals_los[rs1][0] < lcm - step) {
-        printf("OUTPUT: wrapped modulo results many intervals at %x\n", pc - entry_point);
+        printf("OUTPUT: wrapped modulo results many intervals at %llx\n", pc - entry_point);
         exit((int) EXITCODE_SYMBOLICEXECUTIONERROR);
       }
 
@@ -1026,13 +1026,13 @@ void constrain_remu() {
       set_vaddrs(rd, reg_vaddrs[rs1], 0, reg_vaddrs_cnts[rs1]);
 
     } else {
-      printf("OUTPUT: wrapped modulo results many intervals at %x\n", pc - entry_point);
+      printf("OUTPUT: wrapped modulo results many intervals at %llx\n", pc - entry_point);
       exit((int) EXITCODE_SYMBOLICEXECUTIONERROR);
     }
 
     if (reg_hasmn[rs1]) {
       // correction does not work anymore
-      printf("OUTPUT: correction does not work anymore e.g. (1 - [.]) mod 10 at %x\n", pc - entry_point);
+      printf("OUTPUT: correction does not work anymore e.g. (1 - [.]) mod 10 at %llx\n", pc - entry_point);
       exit((int) EXITCODE_SYMBOLICEXECUTIONERROR);
     }
 
@@ -1171,7 +1171,7 @@ uint64_t constrain_ld() {
         if (vaddr >= get_program_break(current_context))
           if (vaddr < registers[REG_SP]) {
             // free memory
-            printf("OUTPUT: loading an uninitialized memory %x\n", pc - entry_point);
+            printf("OUTPUT: loading an uninitialized memory %llx\n", pc - entry_point);
             exit((int) EXITCODE_SYMBOLICEXECUTIONERROR);
           }
 
@@ -1315,7 +1315,7 @@ uint64_t is_safe_address(uint64_t vaddr, uint64_t reg) {
   } else if (reg_mintervals_los[reg][0] == reg_mintervals_ups[reg][0])
     return 1;
   else {
-    printf("OUTPUT: detected unsupported symbolic access of memory interval at %x\n", pc - entry_point);
+    printf("OUTPUT: detected unsupported symbolic access of memory interval at %llx\n", pc - entry_point);
     exit((int) EXITCODE_SYMBOLICEXECUTIONERROR);
   }
 }
@@ -1381,7 +1381,7 @@ void store_symbolic_memory(uint64_t* pt, uint64_t vaddr, uint64_t value, uint32_
     if (is_this_value_concrete && is_prev_value_concrete && trb < mrvc) {
       // overwrite
       if (mints_num > MAX_NUM_OF_INTERVALS) {
-        printf("OUTPUT: maximum number of possible intervals is reached at %x\n", pc - entry_point);
+        printf("OUTPUT: maximum number of possible intervals is reached at %llx\n", pc - entry_point);
         exit((int) EXITCODE_SYMBOLICEXECUTIONERROR);
       }
 
@@ -1404,12 +1404,12 @@ void store_symbolic_memory(uint64_t* pt, uint64_t vaddr, uint64_t value, uint32_
 
   if (is_trace_space_available()) {
     if (mints_num > MAX_NUM_OF_INTERVALS) {
-      printf("OUTPUT: maximum number of possible intervals is reached at %x\n", pc - entry_point);
+      printf("OUTPUT: maximum number of possible intervals is reached at %llx\n", pc - entry_point);
       exit((int) EXITCODE_SYMBOLICEXECUTIONERROR);
     }
 
     if (ld_from_num > MAX_NUM_OF_OP_VADDRS) {
-      printf("OUTPUT: maximum number of possible vaddrs is reached at %x\n", pc - entry_point);
+      printf("OUTPUT: maximum number of possible vaddrs is reached at %llx\n", pc - entry_point);
       exit((int) EXITCODE_SYMBOLICEXECUTIONERROR);
     }
 
@@ -1454,7 +1454,7 @@ void store_symbolic_memory(uint64_t* pt, uint64_t vaddr, uint64_t value, uint32_
           if (forward_propagated_to_tcs[idx].size() < MAX_SD_TO_NUM) {
             forward_propagated_to_tcs[idx].push_back(tc);
           } else {
-            printf("OUTPUT: maximum number of possible sd_to is reached at %x\n", pc - entry_point);
+            printf("OUTPUT: maximum number of possible sd_to is reached at %llx\n", pc - entry_point);
             exit((int) EXITCODE_SYMBOLICEXECUTIONERROR);
           }
         }
@@ -1499,12 +1499,12 @@ void store_temp_constrained_memory(uint64_t* pt, uint64_t vaddr, uint64_t value,
 
   if (is_trace_space_available()) {
     if (mints_num > MAX_NUM_OF_INTERVALS) {
-      printf("OUTPUT: maximum number of possible intervals is reached at %x\n", pc - entry_point);
+      printf("OUTPUT: maximum number of possible intervals is reached at %llx\n", pc - entry_point);
       exit((int) EXITCODE_SYMBOLICEXECUTIONERROR);
     }
 
     if (ld_from_num > MAX_NUM_OF_OP_VADDRS) {
-      printf("OUTPUT: maximum number of possible vaddrs is reached at %x\n", pc - entry_point);
+      printf("OUTPUT: maximum number of possible vaddrs is reached at %llx\n", pc - entry_point);
       exit((int) EXITCODE_SYMBOLICEXECUTIONERROR);
     }
 
@@ -1553,12 +1553,12 @@ void store_input_memory(uint64_t* pt, uint64_t vaddr, uint64_t value, uint32_t d
 
   if (is_trace_space_available()) {
     if (mints_num > MAX_NUM_OF_INTERVALS) {
-      printf("OUTPUT: maximum number of possible intervals is reached at %x\n", pc - entry_point);
+      printf("OUTPUT: maximum number of possible intervals is reached at %llx\n", pc - entry_point);
       exit((int) EXITCODE_SYMBOLICEXECUTIONERROR);
     }
 
     if (ld_from_num > MAX_NUM_OF_OP_VADDRS) {
-      printf("OUTPUT: maximum number of possible vaddrs is reached at %x\n", pc - entry_point);
+      printf("OUTPUT: maximum number of possible vaddrs is reached at %llx\n", pc - entry_point);
       exit((int) EXITCODE_SYMBOLICEXECUTIONERROR);
     }
 
@@ -1639,7 +1639,7 @@ void apply_correction(std::vector<uint64_t>& lo, std::vector<uint64_t>& up, uint
 
     // assert: is_found == true
     // if (is_found == false) {
-    //   printf("OUTPUT: lo_before_op not found at %x\n", pc - entry_point);
+    //   printf("OUTPUT: lo_before_op not found at %llx\n", pc - entry_point);
     //   exit((int) EXITCODE_SYMBOLICEXECUTIONERROR);
     // }
 
@@ -1674,7 +1674,7 @@ void apply_correction(std::vector<uint64_t>& lo, std::vector<uint64_t>& up, uint
 
   } else if (corr_validity == DIVU_T) {
     if (mints_num > 1) {
-      printf("OUTPUT: backward propagation of minterval needed at %x\n", pc - entry_point);
+      printf("OUTPUT: backward propagation of minterval needed at %llx\n", pc - entry_point);
       exit((int) EXITCODE_SYMBOLICEXECUTIONERROR);
     }
 
@@ -1726,7 +1726,7 @@ void apply_correction(std::vector<uint64_t>& lo, std::vector<uint64_t>& up, uint
           propagated_minterval_lo[0] = lo_1;
           propagated_minterval_up[0] = up_2;
         } else {
-          printf("OUTPUT: reverse of division results two intervals at %x\n", pc - entry_point);
+          printf("OUTPUT: reverse of division results two intervals at %llx\n", pc - entry_point);
           exit((int) EXITCODE_SYMBOLICEXECUTIONERROR);
         }
       } else if (which_is_empty == 1) {
@@ -1736,17 +1736,17 @@ void apply_correction(std::vector<uint64_t>& lo, std::vector<uint64_t>& up, uint
         propagated_minterval_lo[0] = lo_1;
         propagated_minterval_up[0] = up_1;
       } else if (which_is_empty == 4) {
-        printf("OUTPUT: reverse of division results empty intervals at %x\n", pc - entry_point);
+        printf("OUTPUT: reverse of division results empty intervals at %llx\n", pc - entry_point);
         exit((int) EXITCODE_SYMBOLICEXECUTIONERROR);
       }
 
     }
 
   } else if (corr_validity == REMU_T) {
-    printf("OUTPUT: detected an unsupported remu in a conditional expression at %x\n", pc - entry_point);
+    printf("OUTPUT: detected an unsupported remu in a conditional expression at %llx\n", pc - entry_point);
     exit((int) EXITCODE_SYMBOLICEXECUTIONERROR);
   } else if (corr_validity > 5) {
-    printf("OUTPUT: detected an unsupported conditional expression at %x\n", pc - entry_point);
+    printf("OUTPUT: detected an unsupported conditional expression at %llx\n", pc - entry_point);
     exit((int) EXITCODE_SYMBOLICEXECUTIONERROR);
   }
 
@@ -1827,7 +1827,7 @@ void propagate_backwards_rhs(std::vector<uint64_t>& lo, std::vector<uint64_t>& u
       // remu
       propagate_remu(steps[mrvc], muldivrem_corrs[stored_to_tc]);
     } else if (corr_validitys[stored_to_tc] > REMU_T) {
-      printf("OUTPUT: unsupported backward propagation %llu at %x\n", corr_validitys[stored_to_tc], pc - entry_point);
+      printf("OUTPUT: unsupported backward propagation %llu at %llx\n", corr_validitys[stored_to_tc], pc - entry_point);
       exit((int) EXITCODE_SYMBOLICEXECUTIONERROR);
     }
 
@@ -1849,7 +1849,7 @@ void propagate_backwards_rhs(std::vector<uint64_t>& lo, std::vector<uint64_t>& u
     if (mr_stored_to_tc == stored_to_tc) {
       store_constrained_memory(vaddrs[stored_to_tc], propagated_minterval_lo, propagated_minterval_up, mints_num, propagated_minterval_step, ld_from_tcs[stored_to_tc], ld_from_tcs[stored_to_tc].size(), hasmns[stored_to_tc], addsub_corrs[stored_to_tc], muldivrem_corrs[stored_to_tc], corr_validitys[stored_to_tc], stored_to_tc, is_inputs[stored_to_tc]);
     } else if (mr_stored_to_tc < stored_to_tc) {
-      printf("OUTPUT: mr_stored_to_tc < stored_to_tc at %x\n", pc - entry_point);
+      printf("OUTPUT: mr_stored_to_tc < stored_to_tc at %llx\n", pc - entry_point);
       exit((int) EXITCODE_SYMBOLICEXECUTIONERROR);
     }
     // else if mr_stored_to_tc > stored_to_tc => means it is overwritten
@@ -2123,7 +2123,7 @@ bool create_true_false_constraints(uint64_t lo1, uint64_t up1, uint64_t lo2, uin
 
   } else {
     // both rs1 and rs2 intervals are wrapped around
-    printf("OUTPUT: < of two non-wrapped intervals are not supported for now at %x \n", pc - entry_point);
+    printf("OUTPUT: < of two non-wrapped intervals are not supported for now at %llx \n", pc - entry_point);
     exit((int) EXITCODE_SYMBOLICEXECUTIONERROR);
   }
 
@@ -2156,7 +2156,7 @@ void create_mconstraints(std::vector<uint64_t>& lo1_p, std::vector<uint64_t>& up
 
   if (cannot_handle) {
     // detected non-singleton interval intersection
-    printf("detected non-singleton interval intersection at %x \n", pc - entry_point);
+    printf("detected non-singleton interval intersection at %llx \n", pc - entry_point);
     exit((int) EXITCODE_SYMBOLICEXECUTIONERROR);
   }
 
@@ -2202,7 +2202,7 @@ void create_mconstraints(std::vector<uint64_t>& lo1_p, std::vector<uint64_t>& up
     is_only_one_branch_reachable = true;
     take_branch(0, 0);
   } else {
-    printf("OUTPUT: both branches unreachable!!! %x\n", pc - entry_point);
+    printf("OUTPUT: both branches unreachable!!! %llx\n", pc - entry_point);
     exit((int) EXITCODE_SYMBOLICEXECUTIONERROR);
   }
 
@@ -2228,7 +2228,7 @@ void create_mconstraints_lptr(uint64_t lo1, uint64_t up1, std::vector<uint64_t>&
 
   if (cannot_handle) {
     // detected non-singleton interval intersection
-    printf("detected non-singleton interval intersection at %x \n", pc - entry_point);
+    printf("detected non-singleton interval intersection at %llx \n", pc - entry_point);
     exit((int) EXITCODE_SYMBOLICEXECUTIONERROR);
   }
 
@@ -2274,7 +2274,7 @@ void create_mconstraints_lptr(uint64_t lo1, uint64_t up1, std::vector<uint64_t>&
     is_only_one_branch_reachable = true;
     take_branch(0, 0);
   } else {
-    printf("OUTPUT: both branches unreachable!!! %x\n", pc - entry_point);
+    printf("OUTPUT: both branches unreachable!!! %llx\n", pc - entry_point);
     exit((int) EXITCODE_SYMBOLICEXECUTIONERROR);
   }
 }
@@ -2299,7 +2299,7 @@ void create_mconstraints_rptr(std::vector<uint64_t>& lo1_p, std::vector<uint64_t
 
   if (cannot_handle) {
     // detected non-singleton interval intersection
-    printf("detected non-singleton interval intersection at %x \n", pc - entry_point);
+    printf("detected non-singleton interval intersection at %llx \n", pc - entry_point);
     exit((int) EXITCODE_SYMBOLICEXECUTIONERROR);
   }
 
@@ -2345,7 +2345,7 @@ void create_mconstraints_rptr(std::vector<uint64_t>& lo1_p, std::vector<uint64_t
     is_only_one_branch_reachable = true;
     take_branch(0, 0);
   } else {
-    printf("OUTPUT: both branches unreachable!!! %x\n", pc - entry_point);
+    printf("OUTPUT: both branches unreachable!!! %llx\n", pc - entry_point);
     exit((int) EXITCODE_SYMBOLICEXECUTIONERROR);
   }
 }
@@ -2556,7 +2556,7 @@ void create_xor_mconstraints(std::vector<uint64_t>& lo1_p, std::vector<uint64_t>
 
     if (cannot_handle) {
       // detected non-singleton interval intersection
-      printf("detected non-singleton interval intersection at %x \n", pc - entry_point);
+      printf("detected non-singleton interval intersection at %llx \n", pc - entry_point);
       exit((int) EXITCODE_SYMBOLICEXECUTIONERROR);
     }
 
@@ -2603,7 +2603,7 @@ void create_xor_mconstraints(std::vector<uint64_t>& lo1_p, std::vector<uint64_t>
       is_only_one_branch_reachable = true;
       take_branch(0, 0);
     } else {
-      printf("OUTPUT: both branches unreachable!!! %x\n", pc - entry_point);
+      printf("OUTPUT: both branches unreachable!!! %llx\n", pc - entry_point);
       exit((int) EXITCODE_SYMBOLICEXECUTIONERROR);
     }
   }
@@ -2648,7 +2648,7 @@ void create_xor_mconstraints_lptr(uint64_t lo1, uint64_t up1, std::vector<uint64
 
     if (cannot_handle) {
       // detected non-singleton interval intersection
-      printf("detected non-singleton interval intersection at %x \n", pc - entry_point);
+      printf("detected non-singleton interval intersection at %llx \n", pc - entry_point);
       exit((int) EXITCODE_SYMBOLICEXECUTIONERROR);
     }
 
@@ -2695,7 +2695,7 @@ void create_xor_mconstraints_lptr(uint64_t lo1, uint64_t up1, std::vector<uint64
       is_only_one_branch_reachable = true;
       take_branch(0, 0);
     } else {
-      printf("OUTPUT: both branches unreachable!!! %x\n", pc - entry_point);
+      printf("OUTPUT: both branches unreachable!!! %llx\n", pc - entry_point);
       exit((int) EXITCODE_SYMBOLICEXECUTIONERROR);
     }
   }
@@ -2740,7 +2740,7 @@ void create_xor_mconstraints_rptr(std::vector<uint64_t>& lo1_p, std::vector<uint
 
     if (cannot_handle) {
       // detected non-singleton interval intersection
-      printf("detected non-singleton interval intersection at %x \n", pc - entry_point);
+      printf("detected non-singleton interval intersection at %llx \n", pc - entry_point);
       exit((int) EXITCODE_SYMBOLICEXECUTIONERROR);
     }
 
@@ -2787,7 +2787,7 @@ void create_xor_mconstraints_rptr(std::vector<uint64_t>& lo1_p, std::vector<uint
       is_only_one_branch_reachable = true;
       take_branch(0, 0);
     } else {
-      printf("OUTPUT: both branches unreachable!!! %x\n", pc - entry_point);
+      printf("OUTPUT: both branches unreachable!!! %llx\n", pc - entry_point);
       exit((int) EXITCODE_SYMBOLICEXECUTIONERROR);
     }
   }
@@ -2894,7 +2894,7 @@ void backtrack_ecall() {
     if (get_program_break(current_context) == mintervals_los[tc][0] + mintervals_ups[tc][0])
       set_program_break(current_context, mintervals_los[tc][0]);
     else {
-      printf("OUTPUT: malloc backtracking error at %x", pc - entry_point);
+      printf("OUTPUT: malloc backtracking error at %llx", pc - entry_point);
       exit((int) EXITCODE_SYMBOLICEXECUTIONERROR);
     }
   } else {
@@ -3109,7 +3109,7 @@ void propagate_mul(uint64_t step, uint64_t k) {
       propagated_minterval_lo[i] = propagated_minterval_lo[i] * k;
       propagated_minterval_up[i] = propagated_minterval_up[i] * k;
     } else {
-      printf("OUTPUT: cannot reason about overflowed mul at %x\n", pc - entry_point);
+      printf("OUTPUT: cannot reason about overflowed mul at %llx\n", pc - entry_point);
       exit((int) EXITCODE_SYMBOLICEXECUTIONERROR);
     }
   }
@@ -3123,7 +3123,7 @@ void propagate_divu(uint64_t step, uint64_t k, uint64_t step_rd) {
       // lo/k == up/k (or) up/k + step_rd
       if (propagated_minterval_lo[i]/k != propagated_minterval_up[i]/k)
         if (propagated_minterval_lo[i]/k > propagated_minterval_up[i]/k + step_rd) {
-          printf("OUTPUT: wrapped divison rsults two intervals at %x \n", pc);
+          printf("OUTPUT: wrapped divison rsults two intervals at %llx \n", pc);
           exit((int) EXITCODE_SYMBOLICEXECUTIONERROR);
         }
 
@@ -3148,7 +3148,7 @@ void propagate_remu(uint64_t step, uint64_t divisor) {
         propagated_minterval_up[i] = propagated_minterval_up[i] % divisor;
         propagated_minterval_step  = step;
       } else if (rem_typ == 1) {
-        printf("OUTPUT: modulo results two intervals at %x\n", pc - entry_point);
+        printf("OUTPUT: modulo results two intervals at %llx\n", pc - entry_point);
         exit((int) EXITCODE_SYMBOLICEXECUTIONERROR);
       } else if (rem_typ == 2) {
         uint64_t gcd_step_k = gcd(step, divisor);
@@ -3156,7 +3156,7 @@ void propagate_remu(uint64_t step, uint64_t divisor) {
         propagated_minterval_up[i] = compute_upper_bound(propagated_minterval_lo[i], gcd_step_k, divisor - 1);
         propagated_minterval_step  = gcd_step_k;
       } else {
-        printf("OUTPUT: modulo results many intervals at %x\n", pc - entry_point);
+        printf("OUTPUT: modulo results many intervals at %llx\n", pc - entry_point);
         exit((int) EXITCODE_SYMBOLICEXECUTIONERROR);
       }
 
@@ -3166,7 +3166,7 @@ void propagate_remu(uint64_t step, uint64_t divisor) {
       uint64_t lcm        = (step * divisor) / gcd_step_k;
 
       if (propagated_minterval_up[i] - propagated_minterval_lo[i] < lcm - step) {
-        printf("OUTPUT: wrapped modulo results many intervals at %x \n", pc - entry_point);
+        printf("OUTPUT: wrapped modulo results many intervals at %llx \n", pc - entry_point);
         exit((int) EXITCODE_SYMBOLICEXECUTIONERROR);
       }
 
@@ -3174,7 +3174,7 @@ void propagate_remu(uint64_t step, uint64_t divisor) {
       propagated_minterval_up[i] = compute_upper_bound(propagated_minterval_lo[i], gcd_step_k, divisor - 1);
       propagated_minterval_step  = gcd_step_k;
     } else {
-      printf("OUTPUT: wrapped modulo results many intervals at %x \n", pc - entry_point);
+      printf("OUTPUT: wrapped modulo results many intervals at %llx \n", pc - entry_point);
       exit((int) EXITCODE_SYMBOLICEXECUTIONERROR);
     }
   }
@@ -3243,7 +3243,7 @@ uint64_t check_conditional_type_equality_or_disequality() {
     pc = saved_pc;
     return DEQ;
   } else {
-    printf("OUTPUT: XOR instruction is incorrectly used at %x \n", pc - entry_point);
+    printf("OUTPUT: XOR instruction is incorrectly used at %llx \n", pc - entry_point);
     exit((int) EXITCODE_SYMBOLICEXECUTIONERROR);
   }
 
