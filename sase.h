@@ -1,3 +1,10 @@
+/*
+  This project contains part of the Selfie Project source code
+  which is governed by a BSD license. For further information
+  and LICENSE conditions see the following website:
+  http://selfie.cs.uni-salzburg.at
+*/
+
 #include <iostream>
 #include "boolector/boolector.h"
 
