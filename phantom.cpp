@@ -4415,21 +4415,22 @@ uint64_t engine(uint64_t* to_context) {
     if (handle_exception(current_context) == EXIT) {
 
       if (symbolic == SASE) {
-        // SASE engine
-        if (sase_tc == 0 || pc == 0) {
-          printf("\nbacktracking: %llu\n\n", ++backtracking_cnt);
+        if (backtracking_cnt == 0) printf1((uint64_t*) "%s: backtracking ", exe_name); else unprint_integer(backtracking_cnt);
+        backtracking_cnt++;
+        print_integer(backtracking_cnt);
+
+        sase_backtrack_trace();
+        set_pc(current_context, pc);
+
+        if (pc == 0) {
+          std::cout << GREEN "\n\nnumber of queries: " << number_of_queries << RESET << "\n";
+          std::cout << GREEN "backtracking: " << backtracking_cnt << RESET << "\n\n";
           return EXITCODE_NOERROR;
-        } else {
-          backtracking_cnt++;
-
-          sase_backtrack_sltu(0);
-          set_pc(current_context, pc);
-
-          if (pc == 0) {
-            printf("\nbacktracking: %llu\n\n", backtracking_cnt);
-            return EXITCODE_NOERROR;
-          }
         }
+
+        boolector_pop(btor, 1);
+        boolector_assert(btor, sase_false_branchs[sase_tc]);
+
       } else {
         // MIT engine
         if (IS_TEST_MODE) {
@@ -4449,13 +4450,8 @@ uint64_t engine(uint64_t* to_context) {
 
         backtrack_trace(current_context);
 
-        if (backtracking_cnt == 0)
-          printf1((uint64_t*) "\n%s: backtracking ", exe_name);
-        else
-          unprint_integer(backtracking_cnt);
-
+        if (backtracking_cnt == 0) printf1((uint64_t*) "\n%s: backtracking ", exe_name); else unprint_integer(backtracking_cnt);
         backtracking_cnt++;
-
         print_integer(backtracking_cnt);
 
         if (pc == 0) {
@@ -4481,6 +4477,7 @@ uint64_t engine(uint64_t* to_context) {
             output_queries.close();
           }
 
+          std::cout << GREEN "backtracking: " << backtracking_cnt << RESET << "\n\n";
           return EXITCODE_NOERROR;
         }
       }
@@ -4587,8 +4584,8 @@ void set_argument(uint64_t* argv) {
 
 void print_usage() {
   printf("usage: \n");
-  printf("modular interval theory: executable -l binary -i 0 \n");
-  printf("SMT:                     executable -l binary -k 0 \n");
+  printf("SE using modular interval theory: executable -l binary -i 0 \n");
+  printf("SE using SMT:                     executable -l binary -k 0 \n");
 }
 
 int main(uint64_t argc, uint64_t* argv) {
@@ -4604,6 +4601,11 @@ int main(uint64_t argc, uint64_t* argv) {
     init_interpreter();
 
     option = get_argument();
+    if (string_compare(option, (uint64_t*) "-help")) {
+      print_usage();
+      return EXITCODE_BADARGUMENTS;
+    }
+
     if (string_compare(option, (uint64_t*) "-l")) {
       selfie_load();
     } else {

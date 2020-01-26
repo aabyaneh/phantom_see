@@ -1,9 +1,18 @@
-#include <fcntl.h>
-#include <unistd.h>
 #include <iostream>
 #include "boolector/boolector.h"
 
-// ------------ shared variables and procedures between source files -----------
+#include <fcntl.h>
+#include <unistd.h>
+
+#define RED    "\x1B[31m"
+#define GREEN  "\033[32m"
+#define YELLOW "\033[33m"
+#define RESET  "\x1B[0m"
+
+// -----------------------------------------------------------------
+// variables and procedures which will be defined in selfie.c
+// and are needed in sase engine
+// -----------------------------------------------------------------
 
 extern uint64_t rs1;
 extern uint64_t rs2;
@@ -20,6 +29,7 @@ extern uint64_t INSTRUCTIONSIZE;
 extern uint64_t EXCEPTION_MAXTRACE;
 extern uint64_t EXCEPTION_PAGEFAULT;
 extern uint64_t EXCEPTION_INVALIDADDRESS;
+extern uint64_t EXCEPTION_UNREACH_EXPLORE;
 extern uint64_t EXITCODE_SYMBOLICEXECUTIONERROR;
 extern uint64_t F3_ADD;
 extern uint64_t F7_SUB;
@@ -60,6 +70,7 @@ uint64_t get_rs2(uint64_t instruction);
 uint64_t get_immediate_i_format(uint64_t instruction);
 uint64_t two_to_the_power_of(uint64_t p);
 uint64_t get_bits(uint64_t n, uint64_t i, uint64_t b);
+uint64_t is_system_register(uint64_t reg);
 
 // -----------------------------------------------------------------
 // ---------------- Solver Aided Symbolic Execution ----------------
@@ -114,15 +125,16 @@ extern uint64_t          input_cnt;
 extern uint64_t          input_cnt_current;
 extern BoolectorNode**   constrained_inputs;
 
+extern uint64_t          number_of_queries;
+
 // ********************** engine functions ************************
 
-void store_registers_fp_sp_rd();
-void restore_registers_fp_sp_rd(uint64_t tr_cnt, uint64_t rd_reg);
+BoolectorNode* boolector_unsigned_int_64(uint64_t value);
 uint8_t match_sub(uint64_t prev_instr_rd);
 uint8_t match_addi();
 uint8_t check_next_1_instrs();
 uint8_t check_next_3_instrs();
-BoolectorNode* boolector_unsigned_int_64(uint64_t value);
+uint8_t check_conditional_type_lte_or_gte_();
 
 void init_sase();
 void sase_lui();
@@ -134,10 +146,10 @@ void sase_divu();
 void sase_remu();
 void sase_xor();
 void sase_sltu();
-void sase_backtrack_sltu(int is_true_branch_unreachable);
 void sase_ld();
 void sase_sd();
 void sase_jal_jalr();
 void sase_store_memory(uint64_t* pt, uint64_t vaddr, uint8_t is_symbolic, uint64_t value, BoolectorNode* sym_value);
+void sase_backtrack_trace();
 void backtrack_branch_stores();
 void sase_backtrack_sltu(int is_true_branch_unreachable);
